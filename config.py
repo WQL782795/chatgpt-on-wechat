@@ -153,6 +153,13 @@ available_setting = {
     "linkai_api_key": "",
     "linkai_app_code": "",
     "linkai_api_base": "https://api.link-ai.chat",  # linkAI服务地址，若国内无法访问或延迟较高可改为 https://api.link-ai.tech
+    "rag_mode": False,
+    "hugging_face_url":"",
+    "hugging_face_token": "",
+    "milvus_uri": "",
+    "milvus_user": "",
+    "milvus_password": "",
+    "milvus_token": ""
 }
 
 

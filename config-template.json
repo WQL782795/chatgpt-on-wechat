@@ -2,6 +2,7 @@
   "channel_type": "wx",
   "model": "",
   "open_ai_api_key": "YOUR API KEY",
+  "open_ai_api_base": "API BASE",
   "text_to_image": "dall-e-2",
   "voice_to_text": "openai",
   "text_to_voice": "openai",
@@ -36,5 +37,11 @@
   "subscribe_msg": "感谢您的关注！\n这里是ChatGPT，可以自由对话。\n支持语音对话。\n支持图片输入。\n支持图片输出，画字开头的消息将按要求创作图片。\n支持tool、角色扮演和文字冒险等丰富的插件。\n输入{trigger_prefix}#help 查看详细指令。",
   "use_linkai": false,
   "linkai_api_key": "",
-  "linkai_app_code": ""
+  "linkai_app_code": "",
+  "hugging_face_url": "",
+  "hugging_face_token": "",
+  "milvus_uri": "",
+  "milvus_user": "",
+  "milvus_password": "",
+  "milvus_token": ""
 }

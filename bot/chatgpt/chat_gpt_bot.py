@@ -1,11 +1,13 @@
 # encoding:utf-8
-
+import os
 import time
 
 import openai
 import openai.error
 import requests
 
+import db.milvus.milvus_db as db
+import pdfutil.text_pre_handle, pdfutil.pdf_split
 from bot.bot import Bot
 from bot.chatgpt.chat_gpt_session import ChatGPTSession
 from bot.openai.open_ai_image import OpenAIImage
@@ -15,6 +17,21 @@ from bridge.reply import Reply, ReplyType
 from common.log import logger
 from common.token_bucket import TokenBucket
 from config import conf, load_config
+
+prompt_template = """
+你是一个问答机器人。
+你的任务是根据下述给定的已知信息回答用户问题。
+确保你的回复完全依据下述已知信息。不要编造答案。
+如果下述已知信息不足以回答用户的问题，请直接回复"我无法回答您的问题"。
+
+已知信息:
+__INFO__
+
+用户问：
+__QUERY__
+
+请用中文回答用户问题。
+"""
 
 
 # OpenAI对话模型API (可用)
@@ -60,8 +77,19 @@ class ChatGPTBot(Bot, OpenAIImage):
             elif query == "#更新配置":
                 load_config()
                 reply = Reply(ReplyType.INFO, "配置已更新")
+            elif query == "#rag_mode":
+                os.environ['rag_mode'] = 'True'
+                reply = Reply(ReplyType.INFO, "RAG mode has been activated, it's an honor to serve you!")
+            elif query == "#rag_mode_close":
+                os.environ['rag_mode'] = 'False'
+                reply = Reply(ReplyType.INFO, "RAG mode has been inactivated, it's an honor to serve you!")
             if reply:
                 return reply
+
+            # get rag data
+            if os.environ.get('rag_mode'):
+                query = prompt_template.replace("__INFO__", self.rag_search(query)).replace("__QUERY__", query)
+
             session = self.sessions.session_query(query, session_id)
             logger.debug("[CHATGPT] session query={}".format(session.messages))
 
@@ -105,6 +133,16 @@ class ChatGPTBot(Bot, OpenAIImage):
         else:
             reply = Reply(ReplyType.ERROR, "Bot不支持处理{}类型的消息".format(context.type))
             return reply
+
+    def rag_search(self, query):
+        return self.build_rag_data(db.db_search(query))
+
+    def build_rag_data(self, result_data):
+        rag_data = ''
+        for data in result_data:
+            for i, r in enumerate(data):
+                rag_data += f"Top{i + 1}\nDistance:{r.distance}\nText:{pdfutil.text_pre_handle.decompress_text(r.entity.text_compress)}\n\n"
+        return rag_data
 
     def reply_text(self, session: ChatGPTSession, api_key=None, args=None, retry_count=0) -> dict:
         """

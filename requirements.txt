@@ -7,3 +7,11 @@ chardet>=5.1.0
 Pillow
 pre-commit
 web.py
+
+pymilvus~=2.3.4
+python-dotenv~=1.0.0
+websocket-client~=1.7.0
+pydub~=0.25.1
+pathlib~=1.0.1
+pip~=23.3.2
+transformers~=4.36.2

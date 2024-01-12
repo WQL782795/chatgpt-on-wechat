@@ -1,4 +1,5 @@
-import os
+import pdfutil.pdf_split, pdfutil.text_pre_handle
+import db.milvus.milvus_db as db
 import re
 import threading
 import time
@@ -221,12 +222,33 @@ class ChatChannel(Channel):
                 }
             elif context.type == ContextType.SHARING:  # 分享信息，当前无默认逻辑
                 pass
-            elif context.type == ContextType.FUNCTION or context.type == ContextType.FILE:  # 文件消息及函数调用等，当前无默认逻辑
+            elif context.type == ContextType.FILE:
+                logger.info("[WX]file message: " + context.content)
+                # 这分支是我新写的
+                context["channel"] = e_context["channel"]
+                # file to db
+                self.pdf_to_vectorDB(context.content)
+                reply = Reply(ReplyType.INFO, "文件已同步至向量数据库。")
+            elif context.type == ContextType.FUNCTION:  # 函数调用，当前无默认逻辑
                 pass
             else:
                 logger.warning("[WX] unknown context type: {}".format(context.type))
                 return
         return reply
+
+    async def pdf_to_vectorDB(self, pdf):
+        paragraphs_list = pdfutil.pdf_split.extract_text_from_pdf(pdf)
+        raws = []
+        retry_list = []
+        pdfutil.text_pre_handle.get_embedding(paragraphs_list, raws, retry_list)
+        if len(retry_list) >= 1:
+            pdfutil.text_pre_handle.get_embedding(retry_list, raws, retry_list)
+        if len(retry_list) >= 1:
+            logger.error("pdf to vector retry error")
+        logger.info(raws)
+        logger.info("pdf to vector success, start insert to vector db")
+        db.db_insert(raws)
+
 
     def _decorate_reply(self, context: Context, reply: Reply) -> Reply:
         if reply and reply.type:
